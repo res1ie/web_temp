@@ -8,16 +8,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
         <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
-        <py-env>
-                - matplotlib
-        </py-env>
     </head>
     <body>
         <div id="matplotlib-lineplot"></div>
-        <py-script output="matplotlib-lineplot">
-            # Python Code
-           
-            # importing the matplotlib library
+        <py-env>
+            - matplotlib
+        </py-env>
+        <py-script output="matplotlib-lineplot">
             import matplotlib.pyplot as plt
             fig, ax = plt.subplots()
             # x axis
