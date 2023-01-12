@@ -17,26 +17,196 @@
     <py-script> print("My Lineplot")</py-script>
     <div id="lineplot"></div>
     <py-script output="lineplot">
-# Python Code Goes Here ...
 import matplotlib.pyplot as plt
+from matplotlib import font_manager,rc
 
+NMAX=10
 fig, ax = plt.subplots()
 
-year_1 = [2016, 2017, 2018, 2019, 2020, 2021]
-population_1 = [42, 43, 45, 47, 48, 50]
 
-year_2 = [2016, 2017, 2018, 2019, 2020, 2021]
-population_2 = [43, 43, 44, 44, 45, 45]
+C=[[1]*(NMAX+1) for i in range(NMAX+1)]
+for n in range(NMAX+1):
+    for r in range(n+1):
+        for i in range(n-r+1,n+1):
+            C[n][r]*=i
+        for i in range(1,r+1):
+            C[n][r]//=i
 
-plt.plot(year_1, population_1, marker='o', linestyle='--', color='g', label='Country 1')
-plt.plot(year_2, population_2,  marker='d', linestyle='-', color='r', label='Country 2')
+def c(n,r):
+    return C[n][r]
 
-plt.xlabel('Year')
-plt.ylabel('Population (M)')
-plt.title('Year vs Population')
-plt.legend(loc='lower right')
+def g(i,n,r,P=0.004):
+    assert i<=n
+    assert n*P<1.01
+    x=0
+    for j in range(0,i+1):
+        x+=((-1)**j)*((1-P*(n+j-i))**r)*c(i,j)
+    x*=c(n,i)
+    return x
 
-fig
+def n_g(i,n,r,half=0,full=0):
+    assert n<=3
+    if r>=100:
+        half=(r+100)//200
+        full=r//200
+    ans=0
+    for h in range(half+1):
+        for f in range(full+1):
+            if h+f>i:
+                continue
+            x=1
+            x*=g(i-h-f,n,r-half-full)
+            x*=g(h,n-i+h+f,half,P=2/15)
+            x*=g(f,n-i+f,full,P=1/3)
+            ans+=x
+    return ans
+
+def get_cases(n):
+    p=0;stone=0;ticket=0
+    cases=[]
+    for j in range(n):
+        for i in range(20):
+            for k in range(n-j):
+                for l in range(j+1):
+                    p=g(k,n,10*(20*j+i))*g(n-j-k+l,n-k,10)
+                    stone=20*j+i+1
+                    #stone*=3000
+                    ticket=max(10*j-30*l-i-1,0)
+                    ticket-=min(max(30*l+i+1-10*j,0),10)
+                    cases.append((p,stone,ticket))
+                
+            if i==19:
+                p=g(n-j-1,n,200*(1+j))
+                stone=20*(1+j)
+                #stone*=3000
+                ticket=10*(1+j)
+                cases.append((p,stone,ticket))
+    return cases
+
+
+
+
+def get_normal_cases(n):
+    assert n<=3
+    p=0;stone=0;ticket=0
+    cases=[]
+    for j in range(n):
+        for i in range(20):
+            for k in range(n-j):
+                for l in range(j+1):
+                    stone=20*j+i+1
+                    p=n_g(k,n,10*(stone-1))*n_g(n-j-k+l,n-k,10,\
+                                                half=(1 if stone%20==10 else 0),\
+                                                full=(1 if stone%20==0 else 0))
+                    #stone*=3000
+                    ticket=max(10*j-30*l-i-1,0)
+                    ticket-=min(max(30*l+i+1-10*j,0),10)
+                    cases.append((p,stone,ticket))
+                
+            if i==19:
+                p=n_g(n-j-1,n,200*(1+j))
+                stone=20*(1+j)
+                #stone*=3000
+                ticket=10*(1+j)
+                cases.append((p,stone,ticket))
+    return cases
+
+
+
+
+
+
+
+
+
+
+
+
+
+def E(x,r):#E(X[i]**r)
+    ans=0
+    for i in range(len(x[0])):
+        ans+=x[1][i]*(x[0][i]**r)
+    return ans
+
+def V(x):
+    return E(x,2)-E(x,1)**2
+
+def sigma(x):
+    D=V(x)
+    if D<0:
+        print("what")
+    return D**0.5
+
+def get_val(n,i):
+    dic={}
+    data=get_cases(n)
+    for _ in data:
+        if _[i] in dic:
+            dic[_[i]]+=_[0]
+        else:
+            dic[_[i]]=_[0]
+    ans=sorted(list(zip(dic.keys(),dic.values())),key=lambda _ : _[0])
+    return ([_[0] for _ in ans],[_[1] for _ in ans])
+
+def get_normal_val(n,i):
+    dic={}
+    data=get_normal_cases(n)
+    for _ in data:
+        if _[i] in dic:
+            dic[_[i]]+=_[0]
+        else:
+            dic[_[i]]=_[0]
+    ans=sorted(list(zip(dic.keys(),dic.values())),key=lambda _ : _[0])
+    return ([_[0] for _ in ans],[_[1] for _ in ans])
+
+def p2c(x):
+    yy=[_ for _ in x[1]]
+    for i in range(len(x[1])-1):
+        yy[i+1]+=yy[i]
+    return (x[0],yy)
+
+def attach_p(x,y):
+    assert x[0][0]*y[0][0]>=0
+    dic={}
+    for i1 in range(len(x[0])):
+        for i2 in range(len(y[0])):
+            _a=x[0][i1]+y[0][i2]
+            _b=x[1][i1]*y[1][i2]
+            if _a in dic:
+                dic[_a]+=_b
+            else:
+                dic[_a]=_b
+    ans=sorted(list(zip(dic.keys(),dic.values())),key=lambda _ : _[0])
+    return ([_[0] for _ in ans],[_[1] for _ in ans])
+
+def show_cdf(x,xlab,gap=1):
+    data=p2c(x)
+    endi=0
+    while data[1][endi]<0.999:
+        endi+=1
+    plt.xlim(data[0][0],data[0][endi])
+    plt.ylim(0,1)
+    plt.xticks([data[0][i] for i in range(0,endi+1,gap)])
+    plt.yticks([0.05*_ for _ in range(0,21)])
+    plt.grid()
+    if len(data[0])>21:
+        print(data[1][7],data[0][7]*3000)
+    plt.plot(data[0],data[1],marker='o')
+    plt.xlabel(xlab)
+    fig
+    #plt.show()
+    
+
+font_name = font_manager.FontProperties(fname="c:/Windows/Fonts/malgun.ttf").get_name()
+rc('font', family=font_name)
+plt.rcParams['axes.unicode_minus'] = False   
+
+data=get_val(1,1)
+data=attach_p(data,get_val(1,1))
+data=attach_p(data,get_val(1,1))
+print(E(data,1)*3000,sigma(data))
+show_cdf(data,"10뽑=3000돌",gap=2)
     </py-script>
 </body>
 </html>
